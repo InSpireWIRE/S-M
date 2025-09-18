@@ -2,7 +2,7 @@
 # T1M Story Session Ender - Logs progress
 
 echo "======================================"
-echo " ENDING T1M STORY SESSION"
+echo " ENDING S!M SESSION"
 echo "======================================"
 
 # Prompt for what was accomplished

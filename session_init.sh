@@ -2,7 +2,7 @@
 # T1M Story Complete Session Initializer
 
 echo "======================================"
-echo " T1M STORY - SESSION INITIALIZATION"
+echo " S!M - SESSION INITIALIZATION"
 echo "======================================"
 echo ""
 
@@ -15,7 +15,7 @@ python3 status_check.py
 
 # Create a session summary for sharing
 cat > session_summary.txt << EOL
-T1M STORY SESSION SUMMARY - $(date)
+S!M SESSION SUMMARY - $(date)
 =====================================
 
 PROJECT: Documentary pitch development platform

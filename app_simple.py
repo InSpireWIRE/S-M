@@ -8,7 +8,7 @@ CORS(app)
 
 @app.route('/')
 def home():
-    return jsonify({"status": "T!M STORY Backend Running"})
+    return jsonify({"status": "S!M Backend Running"})
 
 @app.route('/api/upload-deck', methods=['POST', 'OPTIONS'])
 def upload_deck():

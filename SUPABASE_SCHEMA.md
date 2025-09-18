@@ -1,4 +1,4 @@
-# T!M STORY Supabase Database Schema
+# S!M (Story Intelligence Machine) Supabase Database Schema
 
 ## Active Tables (8 total)
 

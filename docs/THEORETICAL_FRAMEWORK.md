@@ -1,4 +1,4 @@
-# T1M STORY THEORETICAL FOUNDATION
+# S!M THEORETICAL FOUNDATION
 ## Academic Research & Story Frameworks
 
 ### 1. DOCUMENTARY THEORY (Primary Framework)

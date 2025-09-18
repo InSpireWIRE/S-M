@@ -1,4 +1,4 @@
-# T1M STORY - Documentary Development Platform
+# S!M - Documentary Development Platform
 
 
 

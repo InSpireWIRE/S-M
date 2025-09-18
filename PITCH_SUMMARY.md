@@ -1,10 +1,10 @@
-# T1M STORY - Academic Meets Accessible
+# S!M - Academic Meets Accessible
 
 ## The Problem
 Non-scripted producers lack AI tools that act like creative partners — delivering intelligent, academic theory-driven guidance to spark better stories.
 
 ## The Solution  
-T1M STORY: an AI-powered creative partner that uses intelligent, academic theory-driven guidance to ask smarter questions, enhance producers' instincts, and spark stronger stories.
+S!M: an AI-powered creative partner that uses intelligent, academic theory-driven guidance to ask smarter questions, enhance producers' instincts, and spark stronger stories.
 
 ## Academic Credentials
 - **Bill Nichols** (Northwestern) - Documentary modes

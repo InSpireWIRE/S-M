@@ -13,7 +13,7 @@ supabase: Client = create_client(url, key)
 
 @app.route('/')
 def home():
-    return jsonify({"status": "T!M STORY Backend Running with Database"})
+    return jsonify({"status": "S!M Backend Running with Database"})
 
 @app.route('/api/upload-deck', methods=['POST', 'OPTIONS'])
 def upload_deck():

@@ -50,7 +50,7 @@ def allowed_file(filename):
 
 @app.route("/health", methods=["GET"])
 def health_check():
-    return jsonify({"status": "healthy", "project": "TIM Story"})
+    return jsonify({"status": "healthy", "project": "S!M"})
 
 @app.route("/api/test-db", methods=["GET"])
 def test_db():
