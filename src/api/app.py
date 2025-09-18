@@ -9,6 +9,7 @@ from upload_handler import DeckUploadHandler
 from enhanced_synthesis import EnhancedSynthesizer
 from story_analyzer import AdvancedStoryAnalyzer
 from conversation_manager import ConversationManager
+from auth_system import EnterpriseAuthManager
 
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -33,6 +34,7 @@ supabase: Client = create_client(url, key)
 # Initialize analyzers and managers
 analyzer = AdvancedStoryAnalyzer(supabase)
 conversation_mgr = ConversationManager(supabase, analyzer)
+auth = EnterpriseAuthManager(supabase)
 
 # File upload configuration
 UPLOAD_FOLDER = '/tmp/uploads'
@@ -129,11 +131,8 @@ def process_url():
         
         if 'error' in result:
             return jsonify(result), 400
-            
-        return jsonify(result), 200
         
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify(result), 200
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -394,6 +393,27 @@ def generate_synthesis():
     })
     
     return jsonify(synthesis), 200
+
+@app.route('/api/register', methods=['POST'])
+def register_company():
+    """Self-service company registration"""
+    data = request.json
+    result = auth.register_company(
+        data.get('company_name'),
+        data.get('email'),
+        data.get('password')
+    )
+    return jsonify(result), 200 if result.get('success') else 400
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    """User login"""
+    data = request.json
+    result = auth.login(
+        data.get('email'),
+        data.get('password')
+    )
+    return jsonify(result), 200 if result.get('success') else 401
 
 if __name__ == "__main__":
     port = int(os.environ.get("SDP_API_PORT", 5001))
