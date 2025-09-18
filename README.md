@@ -3,33 +3,27 @@
 Documentary intelligence system using sophisticated NLP gap analysis.
 Part of the T!M ecosystem.
 
-## What S!M Does
-- Analyzes documentary pitches and materials
-- Detects documentary styles using NLP patterns
-- Generates intelligent, context-aware gap questions
-- Provides confidence scoring for detected patterns
+## Features
+- Analyzes documentary pitches using NLP pattern detection
+- Detects styles: ARGUMENT-DRIVEN, DISCOVERY-FOCUSED, PERSONAL-JOURNEY
+- Generates context-aware gap questions based on detected style
+- Confidence scoring for pattern matches (achieved 30-36% in testing)
+- Materials upload supporting multiple formats
+- Chunking system for detailed content analysis
 
 ## Tech Stack
 - Backend: Flask API (Python)
-- NLP: SpaCy with custom pattern detection
-- Database: Supabase (8 tables)
-- Analysis: DocumentaryStyleAnalyzer with 30%+ confidence rates
-
-## Current Status
-✅ Production Ready Backend
-✅ Sophisticated Gap Analysis Working
-✅ Materials Upload (pdf, txt, md, rtf, csv, json)
-✅ URL Processing (Google Docs, Vimeo detection ready)
-✅ Chunking System Operational
-
-## Achieved Confidence Rates
-- ARGUMENT-DRIVEN: 36.1%
-- DISCOVERY-FOCUSED: 32.3%
-- Style-specific gaps generating correctly
+- NLP: SpaCy with custom DocumentaryStyleAnalyzer
+- Database: Supabase (8 tables with chunking)
+- File Support: pdf, txt, md, rtf, csv, json
 
 ## API Endpoints
-- `/api/upload-materials` - Upload pitch materials
-- `/api/test-analyzer` - Test gap analysis
-- `/api/process-url` - Process URLs
-- `/api/start-conversation` - Begin analysis session
+- `/api/upload-materials` - Upload documentary materials
+- `/api/test-analyzer` - Test gap analysis directly
+- `/api/process-url` - Process web URLs
+- `/api/start-conversation` - Begin coaching session
+- `/api/ask-followup` - Generate follow-up questions
 - `/api/generate-synthesis` - Create final report
+
+## Status: PRODUCTION READY
+All core features tested and operational
