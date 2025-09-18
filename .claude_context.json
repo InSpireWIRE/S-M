@@ -1,0 +1,25 @@
+{
+  "project": "T1M Story",
+  "version": "0.2.0",
+  "unique_value": "Translates academic documentary theory into conversational coaching",
+  "academic_foundation": {
+    "Bill_Nichols": "Six Documentary Modes (2001, 2010)",
+    "Robert_McKee": "Story Structure - conflict and transformation",
+    "Michael_Rabiger": "Documentary's emotional center",
+    "Blake_Snyder": "Save the Cat beat structure",
+    "Tzvetan_Todorov": "Five-stage narrative equilibrium"
+  },
+  "selling_points": [
+    "Grounded in peer-reviewed documentary theory",
+    "Bridges academia and practical filmmaking",
+    "Conversational not academic language",
+    "Theory-based gap detection algorithm"
+  ],
+  "test_deck": "fc324380-84eb-4d70-a7ac-73f6e7db75e6",
+  "working_features": [
+    "Nichols mode detection",
+    "McKee gap analysis",
+    "Rabiger center questions",
+    "Database-driven coaching"
+  ]
+}

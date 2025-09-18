@@ -1,0 +1,123 @@
+import spacy
+import numpy as np
+from typing import Dict, List, Optional, Tuple
+from collections import Counter
+
+class DocumentaryStyleAnalyzer:
+    """
+    Documentary style detection based on established film theory.
+    Analyzes pitch text to identify documentary approaches.
+    """
+    
+    def __init__(self):
+        try:
+            self.nlp = spacy.load("en_core_web_lg")
+        except OSError:
+            self.nlp = spacy.load("en_core_web_sm")
+        
+        self.style_patterns = self._initialize_patterns()
+        self.min_confidence = 0.15
+        
+    def _initialize_patterns(self) -> Dict[str, Dict]:
+        """Initialize detection patterns based on established documentary theory"""
+        return {
+            'ARGUMENT-DRIVEN': {
+                'claim_verbs': ['argues', 'demonstrates', 'proves', 'shows', 'reveals', 
+                              'establishes', 'confirms', 'validates', 'exposes'],
+                'evidence_markers': ['data', 'research', 'study', 'statistics', 'expert', 
+                                   'interview', 'footage', 'document', 'testimony'],
+                'direct_address': ['you', 'we must', 'it is clear', 'obviously', 'certainly'],
+                'problem_solution': ['problem', 'issue', 'crisis', 'solution', 'answer', 'resolve']
+            },
+            
+            'DISCOVERY-FOCUSED': {
+                'observation_markers': ['observe', 'watch', 'witness', 'see', 'notice', 
+                                      'happening', 'unfold', 'emerge'],
+                'present_tense': ['is', 'are', 'happening', 'occurring', 'developing'],
+                'process_words': ['process', 'development', 'evolution', 'change', 'growth'],
+                'non_intervention': ['without interference', 'naturally', 'spontaneous', 
+                                   'organic', 'authentic', 'real-time']
+            },
+            
+            'ENCOUNTER-BASED': {
+                'filmmaker_presence': ['I', 'we', 'my', 'our', 'filmmaker', 'director'],
+                'interaction_verbs': ['interview', 'speak with', 'talk to', 'meet', 
+                                    'engage', 'collaborate', 'work with'],
+                'relationship_words': ['relationship', 'connection', 'encounter', 
+                                     'dialogue', 'conversation', 'exchange']
+            }
+        }
+    
+    def analyze_pitch(self, text: str) -> Dict:
+        """Main analysis function"""
+        doc = self.nlp(text)
+        
+        style_scores = {}
+        for style_name, patterns in self.style_patterns.items():
+            score = self._calculate_style_score(text, doc, patterns)
+            if score > self.min_confidence:
+                style_scores[style_name] = score
+        
+        dominant_styles = sorted(style_scores.keys(), 
+                               key=lambda x: style_scores[x], 
+                               reverse=True)[:2]
+        
+        gaps = self._identify_gaps(text, dominant_styles)
+        
+        return {
+            'dominant_styles': dominant_styles,
+            'style_scores': style_scores,
+            'gaps': gaps,
+            'analysis_confidence': max(style_scores.values()) if style_scores else 0.0
+        }
+    
+    def _calculate_style_score(self, text: str, doc, patterns: Dict) -> float:
+        """Calculate how strongly text matches a style"""
+        text_lower = text.lower()
+        scores = []
+        
+        for pattern_type, pattern_list in patterns.items():
+            matches = 0
+            for pattern in pattern_list:
+                # Check for word stem matches, not exact matches
+                if pattern.lower() in text_lower:
+                    matches += 1
+                # Also check for word roots (prove/proves/proving)
+                elif pattern.lower().rstrip('s').rstrip('es') in text_lower:
+                    matches += 1
+                elif text_lower.find(pattern.lower()[:4]) >= 0 and len(pattern) > 4:
+                    matches += 0.5  # Partial match for word stems
+            
+            if pattern_list:
+                scores.append(matches / len(pattern_list))
+        
+        return np.mean(scores) if scores else 0.0
+    
+    def _identify_gaps(self, text: str, dominant_styles: List[str]) -> List[Dict]:
+        """Identify what's missing based on detected style"""
+        gaps = []
+        text_lower = text.lower()
+        
+        if 'ARGUMENT-DRIVEN' in dominant_styles:
+            if not any(word in text_lower for word in ['counter', 'opposition', 'however', 'although']):
+                gaps.append({
+                    'type': 'no_counterargument_consideration',
+                    'severity': 'medium',
+                    'suggestion': 'Consider addressing opposing viewpoints'
+                })
+            if 'evidence' not in text_lower and 'data' not in text_lower:
+                gaps.append({
+                    'type': 'missing_evidence_strategy',
+                    'severity': 'high',
+                    'suggestion': 'Explain how you will present evidence'
+                })
+        
+        if 'DISCOVERY-FOCUSED' in dominant_styles:
+            if not any(time in text_lower for time in ['months', 'years', 'weeks', 'time']):
+                gaps.append({
+                    'type': 'insufficient_observation_time',
+                    'severity': 'medium',
+                    'suggestion': 'Specify observation timeframe'
+                })
+        
+        return gaps
