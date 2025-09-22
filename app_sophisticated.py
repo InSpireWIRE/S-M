@@ -1,3 +1,5 @@
+
+
 import os
 import re
 import json
@@ -20,6 +22,59 @@ supabase: Client = create_client(url, key)
 
 # Initialize OpenAI
 openai.api_key = os.environ.get('OPENAI_API_KEY')
+
+# Story-focused personality configurations for sophisticated documentary development
+STORY_PERSONALITIES = {
+    'structuralist': {
+        'focus': 'hidden narrative architecture',
+        'approach': 'investigative_not_prescriptive',
+        'core_prompt': """You help filmmakers discover structural patterns they might not have seen. 
+                         You ASK if patterns exist, not TELL them what patterns are there. 
+                         Use exploratory language: 'Could there be...', 'What if...', 'Do you see...'""",
+        'question_starters': ['Could there be', 'What if', 'Do you see', 'Might the structure'],
+    },
+    
+    'subtext_reader': {
+        'focus': 'unspoken narrative layers',
+        'approach': 'exploratory_not_diagnostic',
+        'core_prompt': """You help filmmakers notice gaps and silences that might be meaningful. 
+                         You EXPLORE absences, not DECLARE them as answers.
+                         Use exploratory language: 'Is there...', 'Might the gap...', 'Could silence...'""",
+        'question_starters': ['Is there', 'Might the gap', 'Could silence', 'Do interviews avoid'],
+    },
+    
+    'pattern_recognizer': {
+        'focus': 'systemic story connections',
+        'approach': 'connective_not_reductive',
+        'core_prompt': """You help filmmakers see potential patterns across scales and generations. 
+                         You SUGGEST connections, not IMPOSE frameworks.
+                         Use exploratory language: 'Do you notice...', 'Could these connect...', 'Might patterns...'""",
+        'question_starters': ['Do you notice', 'Could these connect', 'Might patterns', 'Are there echoes'],
+    },
+    
+    'emotional_archaeologist': {
+        'focus': 'buried emotional truth',
+        'approach': 'revealing_not_interpreting',
+        'core_prompt': """You help filmmakers locate authentic emotion beneath surface narrative. 
+                         You UNCOVER possibilities, not PSYCHOANALYZE.
+                         Use exploratory language: 'Beneath X, might there be...', 'Could the emotion...', 'What if the feeling...'""",
+        'question_starters': ['Beneath', 'Could the emotion', 'What if the feeling', 'Might there be'],
+    }
+}
+
+def select_story_personality(diagnostic):
+    """
+    Selects based on what might most expand the filmmaker's vision
+    Not what's weakest, but what's most fertile for exploration
+    """
+    if diagnostic['structural_clarity'] > 7 and diagnostic['subtext_density'] < 5:
+        return 'subtext_reader'  # Strong structure, explore depths
+    elif diagnostic['emotional_archaeology'] < 5:
+        return 'emotional_archaeologist'  # Find the feeling
+    elif diagnostic['pattern_recognition'] < 5:
+        return 'pattern_recognizer'  # Connect the dots
+    else:
+        return 'structuralist'  # Clarify the architecture
 
 @dataclass
 class Chunk:
@@ -328,6 +383,57 @@ class DocumentaryChunker:
             
         return pages if pages else [1]  # Default to page 1 if no pages found
     
+    def generate_story_diagnostic(self, chunks: List[Dict], all_entities: Dict) -> Dict:
+        """
+        Analyzes the deck's storytelling dimensions
+        Returns scores not as judgments but as landscape mapping
+        """
+        diagnostic = {}
+        
+        # Structural clarity (0-10)
+        act_markers = sum(1 for c in chunks if c.get('narrative_position', {}).get('act_position') in ['setup', 'climax', 'resolution'])
+        diagnostic['structural_clarity'] = min(10, act_markers * 3)
+        
+        # Conflict specificity (0-10)
+        conflict_chunks = [c for c in chunks if c.get('chunk_type') == 'conflict']
+        conflict_names = sum(len(c.get('metadata', {}).get('entities', {}).get('names', [])) for c in conflict_chunks)
+        diagnostic['conflict_specificity'] = min(10, len(conflict_chunks) * 3 + conflict_names)
+        
+        # Transformation markers (0-10)
+        transform_chunks = [c for c in chunks if c.get('chunk_type') == 'transformation']
+        change_words = sum(1 for c in chunks if any(word in c.get('content', '').lower() for word in ['change', 'become', 'transform', 'evolve']))
+        diagnostic['transformation_markers'] = min(10, len(transform_chunks) * 4 + change_words // 5)
+        
+        # Thematic depth (0-10)
+        theme_chunks = [c for c in chunks if c.get('chunk_type') == 'theme']
+        metaphor_indicators = sum(1 for c in chunks if any(word in c.get('content', '').lower() for word in ['represents', 'symbolizes', 'mirrors', 'echoes']))
+        diagnostic['thematic_depth'] = min(10, len(theme_chunks) * 3 + metaphor_indicators)
+        
+        # Perspective diversity (0-10)
+        unique_names = len(all_entities.get('names', []))
+        quote_count = sum(len(c.get('metadata', {}).get('entities', {}).get('quotes', [])) for c in chunks)
+        diagnostic['perspective_diversity'] = min(10, (unique_names // 5) + (quote_count * 2))
+        
+        # Subtext density (0-10)
+        question_marks = sum(c.get('content', '').count('?') for c in chunks)
+        uncertainty_words = sum(1 for c in chunks if any(word in c.get('content', '').lower() for word in ['perhaps', 'might', 'could', 'possibly', 'maybe']))
+        diagnostic['subtext_density'] = min(10, question_marks + uncertainty_words)
+        
+        # Pattern recognition (0-10)
+        repeated_themes = {}
+        for chunk in chunks:
+            for name in chunk.get('metadata', {}).get('entities', {}).get('names', []):
+                repeated_themes[name] = repeated_themes.get(name, 0) + 1
+        patterns_found = sum(1 for count in repeated_themes.values() if count > 2)
+        diagnostic['pattern_recognition'] = min(10, patterns_found * 2)
+        
+        # Emotional archaeology (0-10)
+        emotion_words = sum(1 for c in chunks if any(word in c.get('content', '').lower() for word in 
+            ['feel', 'felt', 'emotion', 'heart', 'soul', 'fear', 'love', 'hate', 'hope', 'despair']))
+        diagnostic['emotional_archaeology'] = min(10, emotion_words // 3)
+        
+        return diagnostic
+    
     def summarize_chunk(self, chunk: Chunk) -> str:
         """Create a focused summary of a chunk"""
         prompt = f"""
@@ -614,34 +720,53 @@ def start_conversation():
         if element not in found_types:
             missing_elements.append(description)
     
-    # Generate questions
-    prompt = f"""
-    You are a documentary story coach analyzing a pitch deck.
+    # Generate story diagnostic
+    chunker = DocumentaryChunker()
+    story_diagnostic = chunker.generate_story_diagnostic(chunks_data, all_entities)
     
-    ENTITIES FOUND IN THE DECK:
-    Names: {', '.join(all_entities.get('names', [])[:20])}
+    # Select personality based on diagnostic
+    selected_personality = select_story_personality(story_diagnostic)
+    personality_config = STORY_PERSONALITIES[selected_personality]
+    
+    print(f"Selected personality: {selected_personality}")
+    print(f"Diagnostic scores: {story_diagnostic}")
+    
+    # Build sophisticated prompt with exploratory framework
+    prompt = f"""
+    You are a sophisticated story consultant acting as a {personality_config['focus']} specialist.
+    
+    APPROACH: {personality_config['approach']}
+    
+    {personality_config['core_prompt']}
+    
+    DECK CONTEXT:
+    Names found: {', '.join(all_entities.get('names', [])[:20])}
     Locations: {', '.join(all_entities.get('locations', [])[:10])}
-    Dates: {', '.join(all_entities.get('dates', [])[:10])}
-    Organizations: {', '.join(all_entities.get('organizations', [])[:10])}
     
     STORY ELEMENTS PRESENT:
     {context}
     
-    POTENTIALLY MISSING ELEMENTS:
-    {missing_elements if missing_elements else 'All basic elements present - probe deeper'}
+    DIAGNOSTIC LANDSCAPE (not weaknesses, but territory to explore):
+    - Structural clarity: {story_diagnostic['structural_clarity']}/10
+    - Conflict specificity: {story_diagnostic['conflict_specificity']}/10  
+    - Transformation markers: {story_diagnostic['transformation_markers']}/10
+    - Thematic depth: {story_diagnostic['thematic_depth']}/10
+    - Emotional archaeology: {story_diagnostic['emotional_archaeology']}/10
+    - Pattern recognition: {story_diagnostic['pattern_recognition']}/10
+    - Subtext density: {story_diagnostic['subtext_density']}/10
     
-    Generate exactly 3 probing questions that:
+    Generate exactly 3 sophisticated questions that:
     
-    1. First question: Reference SPECIFIC names/events from the deck and probe deeper into their story
-    2. Second question: Identify what's MISSING or WEAK in the narrative structure
-    3. Third question: Challenge them to articulate the deeper meaning/theme
+    1. Begin with exploratory language from this list: {personality_config['question_starters']}
+    2. Reference SPECIFIC names, places, or events from the deck
+    3. Open possibilities rather than prescribe solutions
+    4. Respect the filmmaker's authorship
+    5. Use "might," "could," "perhaps" not "is," "should," "must"
+    6. Help filmmakers discover something they haven't seen, not tell them what their story is
     
-    Each question MUST include at least one specific name, place, date, or event from the deck.
+    Each question should explore different aspects of their material through your {personality_config['focus']} lens.
     
-    If certain elements are missing, ask about them specifically.
-    If all elements are present, push for more depth and specificity.
-    
-    Return ONLY a JSON array of 3 questions.
+    Return ONLY a JSON array of 3 question strings.
     """
     
     try:
@@ -683,7 +808,9 @@ def start_conversation():
     conv_data = {
         'deck_id': deck_id,
         'status': 'active',
-        'current_turn': 1
+        'current_turn': 1,
+        'personality_used': selected_personality,  # Track which personality was used
+        'diagnostic_scores': story_diagnostic     # Track the diagnostic scores
     }
     result = supabase.table('conversations').insert(conv_data).execute()
     conversation_id = result.data[0]['id']
