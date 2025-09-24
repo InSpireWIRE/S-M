@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S!M - Story !ntelligence Machine</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-cyan: #00FFE5;
+            --secondary-cyan: #00B4D8;
+            --dark-bg: #0A0A0A;
+            --card-bg: #111111;
+            --border-color: #1a1a1a;
+            --text-primary: #FFFFFF;
+            --text-secondary: #888888;
+            --success: #00FF88;
+            --warning: #FFB800;
+            --error: #FF3366;
+            --gradient: linear-gradient(135deg, #00FFE5, #00B4D8);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: baseline;
+            gap: 1rem;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: 900;
+            letter-spacing: -0.02em;
+        }
+
+        .logo .tim {
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo .story {
+            color: var(--text-primary);
+        }
+
+        .tagline {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+        }
+
+        .patent-badge {
+            background: var(--gradient);
+            color: var(--dark-bg);
+            padding: 0.5rem 1rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        /* Main App Container */
+        .app-container {
+            display: grid;
+            grid-template-columns: 450px 1fr;
+            gap: 2rem;
+            min-height: 70vh;
+        }
+
+        /* Upload Section */
+        .upload-section {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            height: fit-content;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .drop-zone {
+            border: 2px dashed rgba(0, 255, 229, 0.3);
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(0, 255, 229, 0.02);
+        }
+
+        .drop-zone:hover {
+            border-color: var(--primary-cyan);
+            background: rgba(0, 255, 229, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .drop-zone.drag-over {
+            border-color: var(--success);
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        .upload-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 1rem;
+            color: var(--primary-cyan);
+        }
+
+        .browse-btn {
+            background: transparent;
+            border: 2px solid var(--primary-cyan);
+            color: var(--primary-cyan);
+            padding: 0.75rem 2rem;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        .browse-btn:hover {
+            background: var(--primary-cyan);
+            color: var(--dark-bg);
+            transform: scale(1.05);
+        }
+
+        .accepted-formats {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: rgba(0, 255, 229, 0.05);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        .deck-item {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: rgba(0, 255, 229, 0.05);
+            border: 1px solid var(--primary-cyan);
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: fadeInUp 0.3s ease;
+        }
+
+        .deck-name {
+            color: var(--primary-cyan);
+            font-weight: 500;
+        }
+
+        .analyze-btn {
+            background: var(--gradient);
+            color: var(--dark-bg);
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .analyze-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 20px rgba(0, 255, 229, 0.3);
+        }
+
+        /* Conversation Section */
+        .conversation-section {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .conversation-header {
+            margin-bottom: 2rem;
+        }
+
+        .section-title .badge {
+            background: var(--gradient);
+            color: var(--dark-bg);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            margin-left: 0.5rem;
+        }
+
+        .academic-badges {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .academic-badge {
+            background: rgba(0, 255, 229, 0.1);
+            border: 1px solid rgba(0, 255, 229, 0.3);
+            color: var(--primary-cyan);
+            padding: 0.35rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+
+        .turn-counter {
+            float: right;
+            background: rgba(255, 184, 0, 0.1);
+            border: 1px solid var(--warning);
+            color: var(--warning);
+            padding: 0.35rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            margin: 2rem 0;
+            background: rgba(0, 255, 229, 0.05);
+            padding: 1.5rem;
+            border-radius: 12px;
+        }
+
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .progress-steps::before {
+            content: '';
+            position: absolute;
+            top: 16px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--border-color);
+            z-index: 0;
+        }
+
+        .progress-step {
+            text-align: center;
+            flex: 1;
+            position: relative;
+            z-index: 1;
+        }
+
+        .step-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 0.5rem;
+            font-weight: 700;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+
+        .progress-step.active .step-circle {
+            background: var(--gradient);
+            border-color: var(--primary-cyan);
+            color: var(--dark-bg);
+            box-shadow: 0 0 20px rgba(0, 255, 229, 0.5);
+        }
+
+        .progress-step.completed .step-circle {
+            background: var(--success);
+            border-color: var(--success);
+            color: var(--dark-bg);
+        }
+
+        .step-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .progress-step.active .step-label {
+            color: var(--primary-cyan);
+            font-weight: 600;
+        }
+
+        /* Conversation Area */
+        .conversation-area {
+            flex: 1;
+            min-height: 400px;
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 1.5rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+
+        .message {
+            margin-bottom: 1.5rem;
+            animation: fadeInUp 0.3s ease;
+        }
+
+        .message-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .message.system .message-label {
+            color: var(--primary-cyan);
+        }
+
+        .message.user .message-label {
+            color: var(--text-secondary);
+        }
+
+        .message-content {
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .question-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .question-btn {
+            background: rgba(0, 255, 229, 0.05);
+            border: 1px solid rgba(0, 255, 229, 0.3);
+            color: var(--text-primary);
+            padding: 1rem 1.25rem;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .question-btn:hover {
+            background: rgba(0, 255, 229, 0.1);
+            border-color: var(--primary-cyan);
+            transform: translateX(4px);
+            box-shadow: 0 0 20px rgba(0, 255, 229, 0.2);
+        }
+
+        /* Input Area */
+        .input-area {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .message-input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 1rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: var(--primary-cyan);
+            background: rgba(0, 255, 229, 0.02);
+            box-shadow: 0 0 20px rgba(0, 255, 229, 0.1);
+        }
+
+        .send-btn {
+            background: var(--gradient);
+            color: var(--dark-bg);
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 4px 20px rgba(0, 255, 229, 0.3);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Synthesis Panel */
+        .synthesis-panel {
+            display: none;
+            background: linear-gradient(135deg, rgba(0, 255, 229, 0.05), rgba(0, 180, 216, 0.05));
+            border: 2px solid var(--primary-cyan);
+            border-radius: 16px;
+            padding: 2.5rem;
+            margin-top: 2rem;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        .synthesis-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(0, 255, 229, 0.2);
+        }
+
+        .synthesis-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .export-btn, .share-btn {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: 1px solid var(--primary-cyan);
+            color: var(--primary-cyan);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .export-btn:hover, .share-btn:hover {
+            background: var(--primary-cyan);
+            color: var(--dark-bg);
+        }
+
+        .insight-card {
+            background: rgba(0, 0, 0, 0.3);
+            border-left: 3px solid var(--primary-cyan);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-radius: 8px;
+        }
+
+        .insight-card h3 {
+            color: var(--primary-cyan);
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .insight-card p {
+            line-height: 1.6;
+            color: var(--text-primary);
+        }
+
+        /* Loading State */
+        .loading-synthesis {
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid var(--border-color);
+            border-top: 3px solid var(--primary-cyan);
+            border-radius: 50%;
+            margin: 0 auto 1.5rem;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--card-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-cyan);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary-cyan);
+        }
+    </style>
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Initialize Supabase
+        const { createClient } = supabase;
+        const supabaseClient = createClient(
+            'https://izhvyvicvbbuiconxitm.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml6aHZ5dmljdmJidWljb254aXRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjYzMjU0MDAsImV4cCI6MjA0MTkwMTQwMH0.foNlHJSGBQeHPKLEJ-kZMpma-RkhLWJBWDhcLwJgoAU'
+        );
+        // Make it available as 'supabase' for your code
+        window.supabase = supabaseClient;
+    </script>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo-section">
+                <div class="logo">
+                    <span class="tim">S!M</span>
+                </div>
+                <div class="tagline">Story !ntelligence Machine</div>
+            </div>
+            <div class="patent-badge">PATENT PENDING</div>
+        </div>
+
+        <!-- Main App -->
+        <div class="app-container">
+            <!-- Left Panel - Upload -->
+            <div class="upload-section">
+                <h2 class="section-title">
+                    Upload Your Pitch Deck
+                </h2>
+                
+                <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                    <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                    </svg>
+                    <p style="color: var(--text-secondary); margin-bottom: 1rem;">Drag & drop your pitch deck here</p>
+                    <button class="browse-btn" onclick="event.stopPropagation();">Browse Files</button>
+                    <input type="file" id="fileInput" style="display: none;" accept=".pdf,.ppt,.pptx,.doc,.docx" onchange="handleFileUpload(event)">
+                </div>
+                
+                <div style="margin: 1.5rem 0; text-align: center;">
+                    <div style="color: var(--text-secondary); margin-bottom: 0.5rem;">- OR -</div>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <input type="url" 
+                               id="urlInput" 
+                               placeholder="Paste Google Slides or Adobe link..." 
+                               style="flex: 1; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: var(--text-primary); padding: 0.75rem; border-radius: 6px;">
+                        <button onclick="processURL()" 
+                                style="background: var(--gradient); color: var(--dark-bg); border: none; padding: 0.75rem 1.5rem; border-radius: 6px; font-weight: 600; cursor: pointer;">
+                            Process
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="accepted-formats">
+                    <strong>Accepted:</strong> PDF, PPT, PPTX, DOC, DOCX<br>
+                    <strong>Max Size:</strong> 50MB
+                </div>
+
+                <div class="deck-item" id="deckItem" style="display: none;">
+                    <span class="deck-name" id="deckName">Your Pitch.pdf</span>
+                    <button class="analyze-btn" onclick="startAnalysis()">Analyze</button>
+                </div>
+            </div>
+
+            <!-- Right Panel - Conversation -->
+            <div class="conversation-section">
+                <div class="conversation-header">
+                    <h2 class="section-title">
+                        Story Development Conversation
+                        <span class="badge">AI COACHING</span>
+                    </h2>
+                    <div class="academic-badges">
+                        <span class="academic-badge">STYLE ANALYSIS</span>
+                        <span class="academic-badge">GAP THEORY</span>
+                        <span class="academic-badge">DRAMATIC CENTER</span>
+                    </div>
+                    <div class="turn-counter" id="turnCounter" style="display: none;">
+                        Turn <span id="currentTurn">1</span> of 5
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="progress-bar" id="progressBar">
+                    <div class="progress-steps">
+                        <div class="progress-step active" id="step1">
+                            <div class="step-circle">1</div>
+                            <span class="step-label">Upload</span>
+                        </div>
+                        <div class="progress-step" id="step2">
+                            <div class="step-circle">2</div>
+                            <span class="step-label">Analyze</span>
+                        </div>
+                        <div class="progress-step" id="step3">
+                            <div class="step-circle">3</div>
+                            <span class="step-label">Converse</span>
+                        </div>
+                        <div class="progress-step" id="step4">
+                            <div class="step-circle">4</div>
+                            <span class="step-label">Synthesize</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Conversation Area -->
+                <div class="conversation-area" id="conversationArea">
+                    <div class="message system">
+                        <div class="message-label">S!M</div>
+                        <div class="message-content">
+                            Welcome! I'm your Story !ntelligence Machine, powered by 50+ years of documentary theory research. Upload your pitch deck or paste a link, and I'll help you discover what's missing and what's possible in your story.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input Area -->
+                <div class="input-area" id="inputArea" style="display: none;">
+                    <input type="text" class="message-input" id="messageInput" placeholder="Type your answer..." onkeypress="if(event.key==='Enter')sendMessage()">
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()">Send</button>
+                </div>
+
+                <!-- Synthesis Panel -->
+                <div class="synthesis-panel" id="synthesisPanel"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let conversationId = null;
+        let currentTurn = 0;
+        let currentQuestions = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropZone = document.getElementById('dropZone');
+            
+            // Drag and drop handlers
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drag-over');
+            });
+            
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('drag-over');
+            });
+            
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFileUpload({target: {files: files}});
+                }
+            });
+        });
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            document.getElementById('deckName').textContent = file.name;
+            document.getElementById('deckItem').style.display = 'flex';
+            updateProgress(2);
+            addMessage('system', 'Processing file...');
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            fetch('/api/upload-deck', {method: 'POST', body: formData})
+                .then(r => r.json())
+                .then(data => {
+                    window.uploadedDeckId = data.deck_id;
+                    addMessage('system', 'Ready! Click Analyze to begin.');
+                })
+                .catch(err => {
+                    console.error(err);
+                    addMessage('system', 'Upload failed.');
+                });
+        }
+
+        function updateProgress(step) {
+            for (let i = 1; i <= 4; i++) {
+                const stepEl = document.getElementById(`step${i}`);
+                if (i < step) {
+                    stepEl.classList.add('completed');
+                    stepEl.classList.remove('active');
+                } else if (i === step) {
+                    stepEl.classList.add('active');
+                    stepEl.classList.remove('completed');
+                } else {
+                    stepEl.classList.remove('active', 'completed');
+                }
+            }
+        }
+
+        function addMessage(type, content) {
+            const conversationArea = document.getElementById('conversationArea');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.innerHTML = `
+                <div class="message-label">${type === 'system' ? 'S!M' : 'YOU'}</div>
+                <div class="message-content">${content}</div>
+            `;
+            conversationArea.appendChild(messageDiv);
+            conversationArea.scrollTop = conversationArea.scrollHeight;
+        }
+
+        async function startAnalysis() {
+            if (!window.uploadedDeckId) {
+                alert('Please upload a deck first');
+                return;
+            }
+            
+            updateProgress(3);
+            document.getElementById('turnCounter').style.display = 'block';
+            currentTurn = 1;
+            updateTurnCounter();
+            document.getElementById('inputArea').style.display = 'flex';
+            
+            try {
+                // Call your Supabase Edge Function
+                const { data, error } = await supabase.functions.invoke('start-analysis', {
+                    body: { deckId: window.uploadedDeckId }
+                });
+                
+                if (error) throw error;
+                
+                conversationId = data.conversation_id;
+                if (data.questions) {
+                    displayQuestions(data.questions);
+                } else {
+                    displayQuestions(['What obstacles prevent your characters from achieving their goals?']);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Failed to start conversation');
+            }
+        }
+
+        function displayQuestions(questions) {
+            currentQuestions = questions;
+            const questionsHtml = questions.map((q, i) => 
+                `<button class="question-btn" onclick="selectQuestion(${i})">${q}</button>`
+            ).join('');
+            
+            addMessage('system', `Based on my analysis using documentary storytelling frameworks, here are key questions about your pitch:<div class="question-options">${questionsHtml}</div>`);
+        }
+
+        function selectQuestion(index) {
+            const question = currentQuestions[index];
+            document.getElementById('messageInput').value = '';
+            document.getElementById('messageInput').placeholder = `Answering: ${question}`;
+            document.getElementById('messageInput').focus();
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (message) {
+                addMessage('user', message);
+                input.value = '';
+                
+                currentTurn++;
+                updateTurnCounter();
+                
+                if (currentTurn > 5) {
+                    completConversation();
+                } else {
+                    // Simulate getting next question
+                    setTimeout(() => {
+                        const followUps = [
+                            "Tell me more about the deeper truth you're exploring.",
+                            "How does your access or perspective make this unique?",
+                            "What change do you hope to inspire in viewers?"
+                        ];
+                        displayQuestions(followUps);
+                    }, 1000);
+                }
+            }
+        }
+
+        function updateTurnCounter() {
+            document.getElementById('currentTurn').textContent = currentTurn;
+            if (currentTurn >= 5) {
+                document.getElementById('turnCounter').style.background = 'rgba(255, 184, 0, 0.2)';
+            }
+        }
+
+        function completConversation() {
+            updateProgress(4);
+            addMessage('system', 'Excellent work! Generating your story development synthesis...');
+            
+            document.getElementById('inputArea').style.display = 'none';
+            document.getElementById('synthesisPanel').style.display = 'block';
+            
+            // Show loading
+            document.getElementById('synthesisPanel').innerHTML = `
+                <div class="loading-synthesis">
+                    <div class="spinner"></div>
+                    <p>Analyzing your pitch and conversation using documentary theory frameworks...</p>
+                    <p style="font-size: 0.9em; opacity: 0.7; margin-top: 1rem;">This may take 30-60 seconds</p>
+                </div>
+            `;
+            
+            // Call synthesis API
+            generateSynthesis();
+        }
+
+        async function generateSynthesis() {
+            try {
+                const response = await fetch('http://localhost:5001/api/generate-synthesis', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        conversation_id: conversationId
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to generate synthesis');
+                }
+                
+                const data = await response.json();
+                displaySynthesis(data.synthesis || data);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                // Show demo synthesis for testing
+                displayDemoSynthesis();
+            }
+        }
+
+        function displaySynthesis(synthesis) {
+            const synthesisPanel = document.getElementById('synthesisPanel');
+            
+            // Handle both string and object responses
+            let content = '';
+            if (typeof synthesis === 'string') {
+                content = `<div class="insight-card"><p>${synthesis}</p></div>`;
+            } else {
+                content = `
+                    <div class="synthesis-header">
+                        <h2>📋 Your Story Development Synthesis</h2>
+                        <div class="synthesis-actions">
+                            <button onclick="exportSynthesis()" class="export-btn">📥 Export</button>
+                            <button onclick="shareSynthesis()" class="share-btn">🔗 Share</button>
+                        </div>
+                    </div>
+                    
+                    ${synthesis.style_assessment ? `
+                    <div class="insight-card">
+                        <h3>🎬 Documentary Style Assessment</h3>
+                        <p>${synthesis.style_assessment}</p>
+                    </div>` : ''}
+                    
+                    ${synthesis.gaps_identified ? `
+                    <div class="insight-card">
+                        <h3>🔍 Critical Story Gaps</h3>
+                        <p>${synthesis.gaps_identified}</p>
+                    </div>` : ''}
+                    
+                    ${synthesis.narrative_recommendations ? `
+                    <div class="insight-card">
+                        <h3>📊 Narrative Structure</h3>
+                        <p>${synthesis.narrative_recommendations}</p>
+                    </div>` : ''}
+                    
+                    ${synthesis.next_steps ? `
+                    <div class="insight-card">
+                        <h3>✅ Next Steps</h3>
+                        <p>${synthesis.next_steps}</p>
+                    </div>` : ''}
+                `;
+            }
+            
+            synthesisPanel.innerHTML = content;
+        }
+
+        function displayDemoSynthesis() {
+            const demoSynthesis = {
+                style_assessment: "Your pitch aligns with participatory and observational documentary styles. The filmmaker's presence is felt through access to intimate moments, while maintaining observational distance to let the story unfold naturally.",
+                gaps_identified: "Missing clear conflict escalation in the second act. The transformation lacks specific measurable change. No clear opposing force identified to create dramatic tension.",
+                narrative_recommendations: "Structure around three key seasonal cycles. Use declining resources as visual metaphor for change. Build to a clear decision moment about staying versus leaving.",
+                next_steps: "1) Document specific data changes over time. 2) Identify 2-3 key characters to follow. 3) Develop clear three-act turning points. 4) Define the central dramatic question."
+            };
+            displaySynthesis(demoSynthesis);
+        }
+
+        function processURL() {
+            const urlInput = document.getElementById('urlInput');
+            const url = urlInput.value.trim();
+            
+            if (url) {
+                // Validate URL
+                if (url.includes('docs.google.com') || url.includes('adobe.com') || url.includes('dropbox.com')) {
+                    document.getElementById('deckName').textContent = 'Online Presentation';
+                    document.getElementById('deckItem').style.display = 'flex';
+                    updateProgress(2);
+                    addMessage('system', `Processing URL: ${url}. Click "Analyze" to begin your coaching session.`);
+                    
+                    // TODO: Send URL to backend
+                    // fetch('/api/process-url', {
+                    //     method: 'POST',
+                    //     headers: {'Content-Type': 'application/json'},
+                    //     body: JSON.stringify({url: url})
+                    // });
+                } else {
+                    alert('Please enter a valid Google Slides, Adobe, or Dropbox link');
+                }
+            }
+        }
+    </script>
+</body>
+</html>

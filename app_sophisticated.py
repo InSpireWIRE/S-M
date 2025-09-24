@@ -1,5 +1,3 @@
-
-
 import os
 import re
 import json
@@ -469,6 +467,142 @@ class DocumentaryChunker:
             # Fallback summary
             return f"{chunk.chunk_type.title()} section discussing {', '.join(chunk.entities['names'][:3]) if chunk.entities['names'] else 'the subject'}."
 
+    def extract_story_relationships(self, text: str, entities: Dict) -> Dict:
+        """Extract universal story relationships - not just crime"""
+        relationships = {
+            'power_dynamics': [],
+            'emotional_connections': [],
+            'transformations': [],
+            'conflicts': [],
+            'influences': [],
+            'dependencies': [],
+            'parallels': []
+        }
+        
+        # Power/Authority relationships (works for any documentary)
+        power_patterns = [
+            r'(\w+)\s+(?:controls?|leads?|directs?|manages?|owns?)',
+            r'(\w+)\s+(?:depends on|works for|reports to|follows)',
+            r'(\w+)\s+(?:influences?|shapes?|determines?)',
+            r'(\w+)\s+(?:resist|challenge|oppose|fight) (?:against\s+)?(\w+)'
+        ]
+        
+        # Emotional/Human connections
+        connection_patterns = [
+            r'(\w+)\s+(?:loves?|cares? for|supports?|helps?)\s+(\w+)',
+            r'(\w+)\s+(?:betrays?|abandons?|leaves?|hurts?)\s+(\w+)',
+            r'(\w+)\s+(?:inspired by|motivated by|driven by)\s+(\w+)',
+            r'(\w+)\s+(?:fears?|avoids?|escapes? from)\s+(\w+)'
+        ]
+        
+        # Transformation relationships
+        transformation_patterns = [
+            r'(\w+)\s+(?:becomes?|transforms? into|evolves? into|changes? to)',
+            r'(\w+)\s+(?:was|used to be|started as)\s+(.+?)(?:but|before)',
+            r'(\w+)\s+(?:discovers?|realizes?|learns?|understands?)'
+        ]
+        
+        # Conflict patterns (broader than crime)
+        conflict_patterns = [
+            r'(\w+)\s+(?:versus|vs\.?|against|opposes?)\s+(\w+)',
+            r'(\w+)\s+(?:struggles? with|battles?|fights?)\s+(.+)',
+            r'tension between\s+(\w+)\s+and\s+(\w+)',
+            r'(\w+)\s+(?:threatens?|challenges?|undermines?)\s+(\w+)'
+        ]
+        
+        # System/Environmental relationships
+        system_patterns = [
+            r'(\w+)\s+(?:caused by|results from|stems from)\s+(.+)',
+            r'(\w+)\s+(?:leads to|causes?|creates?)\s+(.+)',
+            r'(\w+)\s+(?:part of|within|inside)\s+(.+)',
+            r'(\w+)\s+(?:reflects?|mirrors?|parallels?)\s+(.+)'
+        ]
+        
+        # Extract each type
+        for pattern_list, category in [
+            (power_patterns, 'power_dynamics'),
+            (connection_patterns, 'emotional_connections'),
+            (transformation_patterns, 'transformations'),
+            (conflict_patterns, 'conflicts'),
+            (system_patterns, 'influences')
+        ]:
+            for pattern in pattern_list:
+                matches = re.findall(pattern, text, re.IGNORECASE)
+                relationships[category].extend(matches)
+        
+        # Identify protagonist/subject (not victim/perpetrator)
+        protagonist_patterns = [
+            r'(?:follows?|about|centers? on|focuses? on)\s+(\w+)',
+            r'(\w+)(?:\'s|s\')\s+(?:story|journey|life|struggle)',
+            r'(?:protagonist|subject|main character|hero)\s+(\w+)'
+        ]
+        
+        relationships['protagonist'] = []
+        for pattern in protagonist_patterns:
+            matches = re.findall(pattern, text, re.IGNORECASE)
+            relationships['protagonist'].extend(matches)
+        
+        return relationships
+
+    def identify_story_roles(self, chunks_data, all_entities):
+        """Identify roles in ANY documentary story"""
+        roles = {
+            'central_figure': [],      # Who the story follows
+            'catalyst': [],            # Who/what triggers change
+            'obstacle': [],            # Who/what creates conflict
+            'mentor': [],              # Who guides/teaches
+            'witness': [],             # Who observes/tells
+            'transformed': [],         # Who changes
+            'system': [],              # What larger forces are at play
+            'community': []            # What groups are involved
+        }
+        
+        for chunk in chunks_data:
+            content = chunk.get('content', '').lower()
+            
+            # Central figure (not just victim/perpetrator)
+            if any(word in content for word in ['follows', 'story of', 'journey', 'life of']):
+                # Extract the subject of the documentary
+                names_in_chunk = [n for n in all_entities.get('names', []) if n.lower() in content]
+                roles['central_figure'].extend(names_in_chunk)
+            
+            # Catalyst (what/who starts the change)
+            if any(word in content for word in ['began when', 'started with', 'triggered by']):
+                names_in_chunk = [n for n in all_entities.get('names', []) if n.lower() in content]
+                roles['catalyst'].extend(names_in_chunk)
+            
+            # System/Environment
+            if any(word in content for word in ['system', 'industry', 'community', 'culture']):
+                orgs = [o for o in all_entities.get('organizations', []) if o.lower() in content]
+                roles['system'].extend(orgs)
+        
+        return roles
+
+    def validate_story_understanding(self, question: str, story_roles: Dict) -> tuple:
+        """Validate understanding without assuming crime narrative"""
+        errors = []
+        
+        # Check if roles are confused
+        central_figures = story_roles.get('central_figure', [])
+        obstacles = story_roles.get('obstacle', [])
+        
+        for figure in central_figures:
+            if figure in question:
+                # Check if central figure is mischaracterized
+                negative_actions = ['manipulates', 'controls', 'orchestrates', 'schemes']
+                if any(action in question.lower() for action in negative_actions):
+                    # Only an error if this person isn't actually the obstacle
+                    if figure not in obstacles:
+                        errors.append(f"May mischaracterize {figure}'s role in the story")
+        
+        # Check for assumed relationships that might not exist
+        if 'victim' in question.lower() and 'central_figure' in story_roles:
+            if not any(word in question.lower() for word in ['environmental', 'systemic', 'societal']):
+                errors.append("Assumes victim narrative when story might be about transformation/discovery")
+        
+        return len(errors) == 0, errors
+
+
 @app.route('/')
 def home():
     return jsonify({"status": "S!M Backend Running with Sophisticated Chunking"})
@@ -578,6 +712,9 @@ def upload_deck():
     for key in all_entities:
         all_entities[key] = list(all_entities[key])[:50]
     
+    # Extract story relationships using the chunker method
+    story_relationships = chunker.extract_story_relationships(full_text, all_entities)
+    
     # Store deck in uploaded_decks
     deck_data = {
         'original_filename': file.filename,
@@ -586,7 +723,8 @@ def upload_deck():
             'pages': total_pages,
             'characters': len(full_text),
             'summary': overall_summary,
-            'all_entities': all_entities
+            'all_entities': all_entities,
+            'story_relationships': story_relationships  # Add relationships to stored data
         },
         'deck_name': file.filename,
         'status': 'analyzed'
@@ -648,7 +786,8 @@ def upload_deck():
             "chunks": len(chunks),
             "chunk_types": dict([(c.chunk_type, sum(1 for ch in chunks if ch.chunk_type == c.chunk_type)) 
                                  for c in chunks]),
-            "entities_found": {k: len(v) for k, v in all_entities.items()}
+            "entities_found": {k: len(v) for k, v in all_entities.items()},
+            "relationships_found": {k: len(v) for k, v in story_relationships.items()}
         }
     })
 
@@ -661,7 +800,7 @@ def start_conversation():
     deck_id = data.get('deck_id')
     
     # Get deck info
-    deck_result = supabase.table('uploaded_decks').select('*').eq('id', deck_id).single().execute()
+    deck_result = supabase.table('uploaded_decks').select('*').eq('id', deck_id).execute()
     
     # Get all chunks for this deck
     chunks_result = supabase.table('deck_chunks').select('*').eq('deck_id', deck_id).order('chunk_number').execute()
@@ -678,6 +817,15 @@ def start_conversation():
     
     # Get all entities from deck
     all_entities = deck_data['content_extracted'].get('all_entities', {})
+    
+    # Initialize chunker to access methods
+    chunker = DocumentaryChunker()
+    
+    # Identify story roles
+    story_roles = chunker.identify_story_roles(chunks_data, all_entities)
+    
+    # Get story relationships if available
+    story_relationships = deck_data['content_extracted'].get('story_relationships', {})
     
     # Identify priority chunks for question generation
     priority_chunk_types = ['synopsis', 'character', 'conflict', 'stakes', 'theme', 'transformation']
@@ -721,7 +869,6 @@ def start_conversation():
             missing_elements.append(description)
     
     # Generate story diagnostic
-    chunker = DocumentaryChunker()
     story_diagnostic = chunker.generate_story_diagnostic(chunks_data, all_entities)
     
     # Select personality based on diagnostic
@@ -730,6 +877,7 @@ def start_conversation():
     
     print(f"Selected personality: {selected_personality}")
     print(f"Diagnostic scores: {story_diagnostic}")
+    print(f"Story roles identified: {story_roles}")
     
     # Build sophisticated prompt with exploratory framework
     prompt = f"""
@@ -742,6 +890,11 @@ def start_conversation():
     DECK CONTEXT:
     Names found: {', '.join(all_entities.get('names', [])[:20])}
     Locations: {', '.join(all_entities.get('locations', [])[:10])}
+    
+    STORY ROLES IDENTIFIED:
+    Central Figure: {', '.join(story_roles.get('central_figure', [])[:3])}
+    Catalyst: {', '.join(story_roles.get('catalyst', [])[:3])}
+    System/Environment: {', '.join(story_roles.get('system', [])[:3])}
     
     STORY ELEMENTS PRESENT:
     {context}
@@ -763,6 +916,7 @@ def start_conversation():
     4. Respect the filmmaker's authorship
     5. Use "might," "could," "perhaps" not "is," "should," "must"
     6. Help filmmakers discover something they haven't seen, not tell them what their story is
+    7. DO NOT assume crime/victim narratives - keep questions universal to any documentary type
     
     Each question should explore different aspects of their material through your {personality_config['focus']} lens.
     
@@ -800,6 +954,12 @@ def start_conversation():
         
         print(f"Parsed questions: {questions}")
         
+        # Validate questions using the chunker method
+        for i, question in enumerate(questions):
+            valid, errors = chunker.validate_story_understanding(question, story_roles)
+            if not valid:
+                print(f"Question {i+1} validation errors: {errors}")
+        
     except Exception as e:
         print(f"Question generation error: {e}")
         return jsonify({"error": f"Failed to generate questions: {str(e)}"}), 500
@@ -809,8 +969,9 @@ def start_conversation():
         'deck_id': deck_id,
         'status': 'active',
         'current_turn': 1,
-        'personality_used': selected_personality,  # Track which personality was used
-        'diagnostic_scores': story_diagnostic     # Track the diagnostic scores
+        'personality_used': selected_personality,
+        'diagnostic_scores': story_diagnostic,
+        'story_roles': story_roles  # Store identified roles
     }
     result = supabase.table('conversations').insert(conv_data).execute()
     conversation_id = result.data[0]['id']
@@ -845,7 +1006,8 @@ def start_conversation():
             "chunks_analyzed": len(chunks_data),
             "story_elements_found": list(found_types),
             "missing_elements": missing_elements,
-            "entities_found": {k: len(v) for k, v in all_entities.items()}
+            "entities_found": {k: len(v) for k, v in all_entities.items()},
+            "story_roles": {k: v[:3] for k, v in story_roles.items() if v}  # Return top 3 of each role
         }
     })
 
@@ -871,7 +1033,7 @@ def submit_answer():
     conv_result = supabase.table('conversations').select('*').eq('id', conversation_id).single().execute()
     current_turn = conv_result.data['current_turn']
     deck_id = conv_result.data['deck_id']
-    
+    story_roles = conv_result.data.get("story_roles", {})
     # Get all previous Q&A for context
     prev_questions = supabase.table('conversation_questions').select('*').eq('conversation_id', conversation_id).order('question_number').execute()
     prev_answers = supabase.table('conversation_answers').select('*').eq('conversation_id', conversation_id).execute()
@@ -897,6 +1059,9 @@ def submit_answer():
     Names: {', '.join(all_entities.get('names', [])[:10])}
     Locations: {', '.join(all_entities.get('locations', [])[:5])}
     
+    STORY ROLES:
+    Central Figure: {', '.join(story_roles.get('central_figure', [])[:3])}
+    
     CONVERSATION SO FAR:
     {chr(10).join(conversation_history)}
     
@@ -905,6 +1070,7 @@ def submit_answer():
     2. References specific details from their answer
     3. Pushes toward emotional truth and story clarity
     4. Challenges any gaps or inconsistencies
+    5. Does NOT assume crime/victim narratives unless explicitly present
     
     This is turn {current_turn} of 5. Make it count.
     
@@ -957,9 +1123,9 @@ def generate_synthesis(conversation_id):
     answers = supabase.table('conversation_answers').select('*').eq('conversation_id', conversation_id).execute()
     
     # Get conversation and deck info
-    conv_result = supabase.table('conversations').select('*').eq('id', conversation_id).single().execute()
-    deck_id = conv_result.data['deck_id']
-    deck_result = supabase.table('uploaded_decks').select('*').eq('id', deck_id).single().execute()
+    conv_result = supabase.table('conversations').select('*').eq('id', conversation_id).execute()
+    deck_id = conv_result.data[0]['deck_id']
+    deck_result = supabase.table('uploaded_decks').select('*').eq('id', deck_id).execute()
     
     # Build full conversation
     full_conversation = []
@@ -973,7 +1139,7 @@ def generate_synthesis(conversation_id):
     prompt = f"""
     Analyze this documentary development conversation and provide a synthesis.
     
-    PROJECT: {deck_result.data['original_filename']}
+    PROJECT: {deck_result.data[0]['original_filename']}
     
     FULL CONVERSATION:
     {chr(10).join(full_conversation)}
