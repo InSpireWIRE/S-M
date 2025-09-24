@@ -1,40 +1,93 @@
-# S!M (Story Intelligence Machine)
+# S!M - Story !ntelligence Machine
 
-Documentary intelligence system using sophisticated NLP gap analysis.
-Part of the T!M ecosystem.
+## What is S!M?
 
-## Features
-- Analyzes documentary pitches using NLP pattern detection
-- Detects styles: ARGUMENT-DRIVEN, DISCOVERY-FOCUSED, PERSONAL-JOURNEY
-- Generates context-aware gap questions based on detected style
-- Confidence scoring for pattern matches (achieved 30-36% in testing)
-- Materials upload supporting multiple formats
-- Chunking system for detailed content analysis
+S!M is an AI-powered story development assistant designed for documentary filmmakers and producers. It conducts intelligent conversations about documentary projects and generates sophisticated synthesis reports with multiple reading depths.
 
-## Tech Stack
-- Backend: Flask API (Python)
-- NLP: SpaCy with custom DocumentaryStyleAnalyzer
-- Database: Supabase (8 tables with chunking)
-- File Support: pdf, txt, md, rtf, csv, json
+## How It Works
 
-## API Endpoints
-- `/api/upload-materials` - Upload documentary materials
-- `/api/test-analyzer` - Test gap analysis directly
-- `/api/process-url` - Process web URLs
-- `/api/start-conversation` - Begin coaching session
-- `/api/ask-followup` - Generate follow-up questions
-- `/api/generate-synthesis` - Create final report
+### 1. Upload Phase
+- Users upload a PDF pitch deck or provide a Google Slides URL
+- System extracts and analyzes the content
 
-## Status: PRODUCTION READY
-All core features tested and operational
+### 2. Conversation Phase
+- S!M conducts a 5-turn conversation asking targeted questions
+- Questions adapt based on story type and previous answers
+- Uses "Story Personalities" to explore different narrative angles
 
-## Enterprise Authentication Working
-✅ Company registration endpoint: /api/register
-✅ User login endpoint: /api/login
-✅ Session management implemented
-✅ Ready for unlimited company accounts
-✅ Complete data isolation per company
+### 3. Synthesis Phase
+- Generates comprehensive story analysis with three reading modes:
+  - **Quick (30 sec)**: Bullet points of strengths, gaps, and verdict
+  - **Standard (2 min)**: Full analysis with detailed insights
+  - **Deep (5 min)**: Includes 4 academic framework analyses
 
-Test credentials:
-- Email: admin@testprod.com
-- Password: TestPass123
+## Key Features
+
+### Story Personalities
+- Structuralist: Focuses on narrative architecture
+- Emotional Archaeologist: Explores character depth
+- Access Investigator: Examines feasibility
+- Theme Hunter: Identifies deeper meanings
+- Conflict Specialist: Analyzes tension and drama
+
+### Academic Framework Enhancement
+- **Cognitive Load Theory**: Analyzes information density and pacing
+- **Liminality Theory**: Identifies threshold moments and transitions
+- **Social Identity Theory**: Maps group dynamics and loyalties
+- **Documentary Modes**: Suggests filmmaking approaches (observational, participatory, etc.)
+
+## Technology Stack
+
+- **Backend**: Flask + Python
+- **AI**: OpenAI GPT-3.5/4
+- **Database**: Supabase (PostgreSQL)
+- **Frontend**: HTML/CSS/JavaScript (vanilla)
+
+## Current Status
+
+MVP complete with:
+- ✅ File upload and text extraction
+- ✅ 5-turn conversation system
+- ✅ Baseline synthesis generation
+- ✅ Academic framework enhancement
+- ✅ Three reading modes UI
+
+Needs implementation:
+- ⏳ Frontend-backend connection
+- ⏳ User authentication
+- ⏳ PDF export functionality
+- ⏳ Google Slides import
+- ⏳ Session management
+
+## For Developers
+
+See `DEVELOPER_README.md` for technical setup instructions.
+See `API_DOCUMENTATION.md` for endpoint specifications.
+See `SUPABASE_SCHEMA.md` for database structure.
+
+## Patent Pending
+
+S!M - Story !ntelligence Machine is patent pending technology.
+
+## Multi-Company Authentication (MVP)
+
+The system includes pre-configured company accounts for data separation:
+
+### Test Accounts:
+- Company 1: prodco1 / Demo2024!
+- Company 2: prodco2 / Test2024!
+- Company 3: prodco3 / Pilot2024!
+- Company 4: prodco4 / Story2024!
+- Company 5: prodco5 / Develop2024!
+
+### Data Separation:
+- Each company's conversations are isolated by company_id
+- Users table links to companies table
+- All queries filter by company_id for data isolation
+
+### Implementation Status:
+- ✅ Companies table created
+- ✅ User authentication schema
+- ✅ Data separation by company_id
+- ⏳ Login page UI needs connection
+- ⏳ Session management needs implementation
