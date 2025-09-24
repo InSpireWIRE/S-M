@@ -91,3 +91,24 @@ The system includes pre-configured company accounts for data separation:
 - ✅ Data separation by company_id
 - ⏳ Login page UI needs connection
 - ⏳ Session management needs implementation
+
+## Test Accounts for Development
+
+For testing the multi-company authentication system, use these pre-configured accounts:
+
+| Username | Password | Company Description |
+|----------|----------|-------------------|
+| prodco1 | Demo2024! | Documentary House |
+| prodco2 | Test2024! | TrueCrime Productions |
+| prodco3 | Pilot2024! | Netflix Originals |
+| prodco4 | Story2024! | Indie Films Co |
+| prodco5 | Develop2024! | Test Company |
+
+**Note:** These accounts are for development and testing only. Production deployment should implement proper user registration and secure authentication.
+
+## Security Notes
+
+- Test passwords are visible in this README for development convenience
+- Production deployment must use secure password storage (hashed/salted)
+- Implement proper session management before production use
+- Add SSL/HTTPS for all authentication endpoints
