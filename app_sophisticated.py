@@ -5,7 +5,7 @@ import openai
 import hashlib
 from typing import List, Dict, Tuple
 from dataclasses import dataclass
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, render_template
 from flask_cors import CORS
 from supabase import create_client, Client
 import pdfplumber
@@ -603,7 +603,7 @@ class DocumentaryChunker:
         return len(errors) == 0, errors
 
 
-@app.route('/')
+@app.route('/api/status')
 def home():
     return jsonify({"status": "S!M Backend Running with Sophisticated Chunking"})
 
@@ -1166,6 +1166,33 @@ def generate_synthesis(conversation_id):
     )
     
     synthesis_text = response.choices[0].message.content
+
+    
+    # ============ ACADEMIC FRAMEWORK ENHANCEMENT ============
+    ENABLE_ACADEMIC_FRAMEWORKS = True
+    print(f"DEBUG: ENABLE_ACADEMIC_FRAMEWORKS = {ENABLE_ACADEMIC_FRAMEWORKS}")
+    print(f"DEBUG: questions.data exists = {bool(questions.data)}")
+    print(f"DEBUG: answers.data exists = {bool(answers.data)}")
+    if ENABLE_ACADEMIC_FRAMEWORKS:
+        try:
+            print("Applying academic framework analysis...")
+            framework_conversation_data = {
+                'questions': questions.data if questions.data else [],
+                'answers': answers.data if answers.data else []
+            }
+            from academic_frameworks import AcademicFrameworkAnalyzer
+            analyzer = AcademicFrameworkAnalyzer()
+            enhanced_synthesis_text = analyzer.enhance_synthesis(
+                synthesis_text,
+                framework_conversation_data,
+                ['cognitive_load', 'liminality', 'social_identity', 'documentary_mode']
+            )
+            synthesis_text = enhanced_synthesis_text
+            print("Academic frameworks applied successfully")
+        except Exception as e:
+            print(f"Framework enhancement failed: {e}")
+    # ============ END OF ENHANCEMENT ============
+
     
     # Store synthesis
     synthesis_data = {
@@ -1196,3 +1223,7 @@ def serve_template(filename):
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port, debug=True)
+
+@app.route('/')
+def index():
+    return render_template('index.html')
