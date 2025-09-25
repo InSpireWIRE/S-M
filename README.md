@@ -112,3 +112,32 @@ For testing the multi-company authentication system, use these pre-configured ac
 - Production deployment must use secure password storage (hashed/salted)
 - Implement proper session management before production use
 - Add SSL/HTTPS for all authentication endpoints
+
+## Recent Updates (September 25, 2025)
+
+### Story Metrics Integration
+- Added comprehensive metrics system to Story Intelligence Machine
+- Metrics include:
+  - Completeness Index: Scores documentary story elements (0-100)
+  - Coherence Score: Measures narrative connection strength (0-100)
+  - Development Velocity: Tracks gap closure rate through conversation (0-100)
+  - Pattern Match: Compares structure to successful documentaries (0-100%)
+  - Overall Readiness: Combined score with production recommendations
+
+### Academic Framework Enhancement
+- Integrated 4 theoretical frameworks into synthesis
+- Cognitive Load Theory, Liminality Theory, Social Identity Theory, Documentary Modes
+
+### API Endpoints
+- /api/generate-synthesis - POST endpoint returns synthesis, metrics, frameworks
+
+### Bug Fixes
+- Fixed None/NoneType handling in all .lower() calls
+- Corrected table name from pitch_decks to uploaded_decks
+- Fixed Flask route decorators and function signatures
+
+### System Status
+- Synthesis generation operational
+- Metrics calculation working
+- Academic frameworks applying successfully
+- API endpoints functional
