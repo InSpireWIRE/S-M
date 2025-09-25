@@ -1114,9 +1114,11 @@ def submit_answer():
         "current_turn": current_turn + 1,
         "remaining_turns": max(0, 5 - (current_turn + 1))
     })
+@app.route("/api/generate-synthesis", methods=["POST"])
 
-def generate_synthesis(conversation_id):
+def generate_synthesis():
     """After 5 turns, synthesize the conversation into insights"""
+    conversation_id = request.json.get("conversation_id")
     
     # Get all Q&A
     questions = supabase.table('conversation_questions').select('*').eq('conversation_id', conversation_id).order('question_number').execute()
@@ -1167,6 +1169,31 @@ def generate_synthesis(conversation_id):
     
     synthesis_text = response.choices[0].message.content
 
+    # ============ STORY METRICS CALCULATION ============
+    try:
+        from src.api.story_metrics import StoryMetricsAnalyzer
+        metrics_analyzer = StoryMetricsAnalyzer()
+        
+        # Get deck text for metrics
+        deck_result = supabase.table('uploaded_decks').select('*').eq('id', deck_id).single().execute()
+        deck_text = deck_result.data.get('extracted_text') if deck_result.data and deck_result.data.get('extracted_text') else ''
+        
+        # Get conversation answers
+        answers_result = supabase.table('conversation_answers').select('*').eq('conversation_id', conversation_id).execute()
+        
+        conversation_data = {
+            'answers': answers_result.data if answers_result.data else []
+        }
+        
+        # Calculate metrics
+        metrics = metrics_analyzer.generate_metrics_summary(deck_text, conversation_data)
+        print(f"✅ Metrics calculated successfully")
+        
+    except Exception as e:
+        print(f"⚠️ Metrics calculation failed: {e}")
+        metrics = None
+
+
     
     # ============ ACADEMIC FRAMEWORK ENHANCEMENT ============
     ENABLE_ACADEMIC_FRAMEWORKS = True
@@ -1212,6 +1239,7 @@ def generate_synthesis(conversation_id):
     
     return jsonify({
         "synthesis": synthesis_text,
+        "metrics": metrics if 'metrics' in locals() else None,
         "conversation_complete": True,
         "total_exchanges": len(answers.data)
     })

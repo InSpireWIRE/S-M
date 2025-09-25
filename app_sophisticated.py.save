@@ -9,6 +9,7 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from supabase import create_client, Client
 import pdfplumber
+from academic_frameworks import AcademicFrameworkAnalyzer
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*", "methods": ["GET", "POST", "OPTIONS"]}})
@@ -1166,6 +1167,47 @@ def generate_synthesis(conversation_id):
     )
     
     synthesis_text = response.choices[0].message.content
+
+synthesis_text = response.choices[0].message.content
+    
+    # ============ ADD ACADEMIC FRAMEWORK ENHANCEMENT HERE ============
+    # This ENHANCES the existing synthesis, doesn't replace it
+    ENABLE_ACADEMIC_FRAMEWORKS = True  # Set to False to disable
+    
+    if ENABLE_ACADEMIC_FRAMEWORKS:
+        try:
+            print("🔬 Applying academic framework analysis...")
+            
+            # Prepare conversation data for framework analysis
+            framework_conversation_data = {
+                'questions': questions.data if questions.data else [],
+                'answers': answers.data if answers.data else []
+            }
+            
+            # Initialize the framework analyzer
+            from academic_frameworks import AcademicFrameworkAnalyzer
+            analyzer = AcademicFrameworkAnalyzer(openai)
+            
+            # ENHANCE the synthesis (adds to it, doesn't replace)
+            enhanced_synthesis_text = analyzer.enhance_synthesis(
+                synthesis_text,  # Your existing synthesis
+                framework_conversation_data,
+                frameworks_to_apply=['cognitive_load', 'liminality', 'social_identity']
+            )
+            
+            # Use the enhanced version
+            synthesis_text = enhanced_synthesis_text
+            print("✅ Academic frameworks applied successfully")
+            
+        except Exception as e:
+            print(f"⚠️ Framework enhancement failed: {e}")
+            print("Using baseline synthesis without enhancements")
+            # synthesis_text remains unchanged if enhancement fails
+    
+    # ============ END OF ENHANCEMENT ============
+    
+    # Store synthesis (your existing code continues here)
+    synthesis_data = {
     
     # Store synthesis
     synthesis_data = {
