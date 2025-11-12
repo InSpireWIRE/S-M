@@ -5,12 +5,12 @@ import openai
 import hashlib
 from typing import List, Dict, Tuple
 from dataclasses import dataclass
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, render_template
 from flask_cors import CORS
 from supabase import create_client, Client
 import pdfplumber
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="templates")
 CORS(app, resources={r"/api/*": {"origins": "*", "methods": ["GET", "POST", "OPTIONS"]}})
 
 # Initialize Supabase
@@ -603,7 +603,7 @@ class DocumentaryChunker:
         return len(errors) == 0, errors
 
 
-@app.route('/')
+@app.route('/api/status')
 def home():
     return jsonify({"status": "S!M Backend Running with Sophisticated Chunking"})
 
@@ -1114,9 +1114,11 @@ def submit_answer():
         "current_turn": current_turn + 1,
         "remaining_turns": max(0, 5 - (current_turn + 1))
     })
+@app.route("/api/generate-synthesis", methods=["POST"])
 
-def generate_synthesis(conversation_id):
+def generate_synthesis():
     """After 5 turns, synthesize the conversation into insights"""
+    conversation_id = request.json.get("conversation_id")
     
     # Get all Q&A
     questions = supabase.table('conversation_questions').select('*').eq('conversation_id', conversation_id).order('question_number').execute()
@@ -1166,6 +1168,58 @@ def generate_synthesis(conversation_id):
     )
     
     synthesis_text = response.choices[0].message.content
+
+    # ============ STORY METRICS CALCULATION ============
+    try:
+        from src.api.story_metrics import StoryMetricsAnalyzer
+        metrics_analyzer = StoryMetricsAnalyzer()
+        
+        # Get deck text for metrics
+        deck_result = supabase.table('uploaded_decks').select('*').eq('id', deck_id).single().execute()
+        deck_text = deck_result.data.get('extracted_text') if deck_result.data and deck_result.data.get('extracted_text') else ''
+        
+        # Get conversation answers
+        answers_result = supabase.table('conversation_answers').select('*').eq('conversation_id', conversation_id).execute()
+        
+        conversation_data = {
+            'answers': answers_result.data if answers_result.data else []
+        }
+        
+        # Calculate metrics
+        metrics = metrics_analyzer.generate_metrics_summary(deck_text, conversation_data)
+        print(f"✅ Metrics calculated successfully")
+        
+    except Exception as e:
+        print(f"⚠️ Metrics calculation failed: {e}")
+        metrics = None
+
+
+    
+    # ============ ACADEMIC FRAMEWORK ENHANCEMENT ============
+    ENABLE_ACADEMIC_FRAMEWORKS = True
+    print(f"DEBUG: ENABLE_ACADEMIC_FRAMEWORKS = {ENABLE_ACADEMIC_FRAMEWORKS}")
+    print(f"DEBUG: questions.data exists = {bool(questions.data)}")
+    print(f"DEBUG: answers.data exists = {bool(answers.data)}")
+    if ENABLE_ACADEMIC_FRAMEWORKS:
+        try:
+            print("Applying academic framework analysis...")
+            framework_conversation_data = {
+                'questions': questions.data if questions.data else [],
+                'answers': answers.data if answers.data else []
+            }
+            from academic_frameworks import AcademicFrameworkAnalyzer
+            analyzer = AcademicFrameworkAnalyzer()
+            enhanced_synthesis_text = analyzer.enhance_synthesis(
+                synthesis_text,
+                framework_conversation_data,
+                ['cognitive_load', 'liminality', 'social_identity', 'documentary_mode']
+            )
+            synthesis_text = enhanced_synthesis_text
+            print("Academic frameworks applied successfully")
+        except Exception as e:
+            print(f"Framework enhancement failed: {e}")
+    # ============ END OF ENHANCEMENT ============
+
     
     # Store synthesis
     synthesis_data = {
@@ -1185,6 +1239,7 @@ def generate_synthesis(conversation_id):
     
     return jsonify({
         "synthesis": synthesis_text,
+        "metrics": metrics if 'metrics' in locals() else None,
         "conversation_complete": True,
         "total_exchanges": len(answers.data)
     })
@@ -1193,6 +1248,15 @@ def generate_synthesis(conversation_id):
 def serve_template(filename):
     return send_from_directory("src/api/templates", filename)
 
+@app.route('/')
+def root_page():
+    return render_template('index.html')
+
+@app.route('/test')
+def test():
+    return 'TEST WORKS'
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port, debug=True)
+

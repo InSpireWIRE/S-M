@@ -5,12 +5,15 @@ import openai
 import hashlib
 from typing import List, Dict, Tuple
 from dataclasses import dataclass
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from supabase import create_client, Client
 import pdfplumber
+from dotenv import load_dotenv
+load_dotenv()  # This loads .env file
 
 app = Flask(__name__)
+app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024  # 500MB
 CORS(app, resources={r"/api/*": {"origins": "*", "methods": ["GET", "POST", "OPTIONS"]}})
 
 # Initialize Supabase
@@ -20,6 +23,9 @@ supabase: Client = create_client(url, key)
 
 # Initialize OpenAI
 openai.api_key = os.environ.get('OPENAI_API_KEY')
+# Initialize OpenAI client
+from openai import OpenAI
+client = OpenAI(api_key=openai.api_key)
 
 @dataclass
 class Chunk:
@@ -348,7 +354,7 @@ class DocumentaryChunker:
         """
         
         try:
-            response = openai.ChatCompletion.create(
+            response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": "Create story-focused summaries for documentary analysis."},
@@ -365,7 +371,7 @@ class DocumentaryChunker:
 
 @app.route('/')
 def home():
-    return jsonify({"status": "S!M Backend Running with Sophisticated Chunking"})
+    return render_template('index.html')
 
 def extract_text_with_ocr(file_path, max_pages=10):
     """Fallback to OCR when pdfplumber can't extract text"""
@@ -645,7 +651,7 @@ def start_conversation():
     """
     
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo-16k" if len(prompt) > 3000 else "gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "You are an expert documentary story coach. Always reference specific details from the deck."},
@@ -785,7 +791,7 @@ def submit_answer():
     """
     
     # Get follow-up question from GPT
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
             {"role": "system", "content": "You are an expert documentary coach. Build on what they just said, dig deeper."},
@@ -821,6 +827,12 @@ def submit_answer():
         "current_turn": current_turn + 1,
         "remaining_turns": max(0, 5 - (current_turn + 1))
     })
+
+@app.route('/api/generate-synthesis', methods=['POST'])
+def api_generate_synthesis():
+    data = request.json
+    conversation_id = data.get('conversation_id')
+    return generate_synthesis(conversation_id)
 
 def generate_synthesis(conversation_id):
     """After 5 turns, synthesize the conversation into insights"""
@@ -862,7 +874,7 @@ def generate_synthesis(conversation_id):
     Be specific, reference their actual story details, and provide actionable feedback.
     """
     
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-3.5-turbo-16k",
         messages=[
             {"role": "system", "content": "You are synthesizing a documentary development conversation. Be insightful and specific."},

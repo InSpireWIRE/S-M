@@ -562,14 +562,14 @@
         }
 
         /* Responsive */
-        @media (max-width: 768px) {
-            .main-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .mode-selector {
-                flex-direction: column;
-            }
+//         @media (max-width: 768px) {
+//             .main-grid {
+//                 grid-template-columns: 1fr;
+//             }
+//             
+//             .mode-selector {
+//                 flex-direction: column;
+//             }
         }
     </style>
 </head>
@@ -590,8 +590,8 @@
             </div>
         </div>
 
-        <div class="main-grid" id="main-grid">
-            <div class="upload-section">
+        <div class="main-grid" id="main-grid" style="display: flex !important; flex-direction: row !important; gap: 2rem !important;">
+            <div class="upload-section" style="width: 350px !important; flex-shrink: 0 !important;">
                 <h2 class="section-title">Upload Your Document</h2>
                 
                 <!-- URL Input -->
@@ -607,6 +607,12 @@
                 <div class="divider">or</div>
 
                 <!-- File Upload -->
+                <!-- Status Display -->
+                <div id="processing-status" style="display: none; background: rgba(0, 255, 229, 0.1); border: 1px solid var(--primary-cyan); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                    <div style="color: var(--primary-cyan); font-weight: 600;">Processing Status</div>
+                    <div id="status-text" style="color: var(--text-primary); margin-top: 0.5rem;">Initializing...</div>
+                    <div id="chunk-info" style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.875rem;"></div>
+                </div>
                 <div class="upload-area" onclick="document.getElementById('file-input').click()">
                     <div class="upload-icon">📁</div>
                     <p class="upload-text">Click to upload PDF<br>or drag and drop</p>
@@ -618,11 +624,21 @@
                     <div class="file-size" id="file-size"></div>
                 </div>
 
-                <button class="send-btn" id="start-btn" style="width: 100%; margin-top: 2rem; display: none;" 
-                        onclick="startConversation()">Start Conversation</button>
+                <button class="send-btn" id="send-btn" style="width: 100%; margin-top: 2rem; display: none;" 
+                <div id="processing-status" style="display: none; background: rgba(0, 255, 229, 0.1); border: 1px solid var(--primary-cyan); border-radius: 8px; padding: 1rem; margin: 1rem 0; color: var(--primary-cyan);">
+                    <div style="font-weight: 600;">🔄 Processing Document...</div>
+                    <div id="status-detail" style="margin-top: 0.5rem; color: var(--text-primary);">Extracting text with OCR...</div>
+                    <div style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);">This may take 30-60 seconds for large documents</div>
+                </div>
+                <div id="processing-status" style="display: none; background: rgba(0, 255, 229, 0.1); border: 1px solid var(--primary-cyan); border-radius: 8px; padding: 1rem; margin: 1rem 0; color: var(--primary-cyan);">
+                    <div style="font-weight: 600;">🔄 Processing Document...</div>
+                    <div id="status-detail" style="margin-top: 0.5rem; color: var(--text-primary);">Extracting text with OCR...</div>
+                    <div style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);">This may take 30-60 seconds for large documents</div>
+                </div>
+                        <button id="start-btn" class="action-btn" onclick="startConversation()" style="display: none;">Start Analysis</button>
             </div>
 
-            <div class="conversation-section">
+            <div class="conversation-section" style="flex-grow: 1 !important; width: calc(100% - 400px) !important;">
                 <div class="conversation-header">
                     <h2 class="section-title">Story Development</h2>
                     <div class="framework-badges">
@@ -634,7 +650,7 @@
                 
                 <div class="turn-counter" id="turn-counter" style="display: none;">Turn 1 of 5</div>
                 
-                <div class="conversation-area" id="conversation-area">
+                <div class="conversation-area" id="conversation-area" style="background: #1a1a1a; color: white; border: 2px solid #00FFE5; border-radius: 8px; padding: 20px;">
                     <div class="message system">
                         <p>Welcome to S!M. Upload and let's begin a conversation.</p>
                     </div>
@@ -665,6 +681,17 @@
                         </button>
                     </div>
                 </div>
+                    <!-- Metrics Toggle -->
+                <div class="metrics-toggle" onclick="toggleMetrics()" style="display: flex; align-items: center; gap: 10px; margin: 20px 0; cursor: pointer;">
+                    <div class="toggle-switch" id="metricsToggle" style="width: 50px; height: 26px; background: rgba(255, 255, 255, 0.1); border-radius: 13px; position: relative; transition: background 0.3s;">
+                        <div class="toggle-knob" style="width: 22px; height: 22px; background: #666; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: all 0.3s;"></div>
+                    </div>
+                    <span style="color: var(--text-secondary);">Show Story Development Metrics</span>
+                </div>
+
+                <!-- Metrics Dashboard (hidden by default) -->
+                <div class="metrics-dashboard" id="metricsSection" style="display: none; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px;"></div>
+                    
 
                 <div class="synthesis-content">
                     <!-- Quick View -->
@@ -745,9 +772,10 @@
             const file = event.target.files[0];
             if (file) {
                 document.getElementById('uploaded-file').classList.add('show');
-                document.getElementById("file-name").textContent = "Uploading... Please wait";
-                document.getElementById("file-size").textContent = "";
-                uploadFile(file);
+                document.getElementById('file-name').textContent = file.name;
+                document.getElementById('file-size').textContent = `${(file.size / 1024).toFixed(2)} KB`;
+                document.getElementById('start-btn').style.display = 'block';
+                uploadFileWithStatus(file);
             }
         }
 
@@ -762,10 +790,6 @@
                 });
                 const data = await response.json();
                 conversationId = data.conversation_id;
-                window.uploadedDeckId = data.deck_id;
-                document.getElementById("start-btn").style.display = "block";
-                document.getElementById("file-name").textContent = file.name;
-                document.getElementById("file-size").textContent = (file.size / 1024).toFixed(2) + " KB";
             } catch (error) {
                 console.error('Upload failed:', error);
                 // For demo, generate a fake ID
@@ -774,6 +798,56 @@
         }
 
         // Start Conversation
+        async function startConversation() {
+            // Update progress
+            document.getElementById('step-upload').classList.remove('active');
+            document.getElementById('step-upload').classList.add('completed');
+            document.getElementById('step-analyze').classList.add('active');
+            
+            // Show turn counter
+            currentTurn = 1;
+            document.getElementById('turn-counter').style.display = 'block';
+            updateTurnCounter();
+            
+            // Enable input
+            document.getElementById('message-input').disabled = false;
+
+            // Call backend to get REAL questions from uploaded deck
+            try {
+                const response = await fetch("/api/start-conversation", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({deck_id: window.uploadedDeckId})
+                });
+                const data = await response.json();
+                console.log("Backend response:", data);
+                
+                // Use REAL questions from backend instead of demo
+                if (data.questions && data.questions.length > 0) {
+                    // Clear demo messages
+                    document.getElementById("conversation-area").innerHTML = "";
+                    // Add first real question
+                    setTimeout(() => {
+                        addSystemMessage(data.questions[0]);
+                    }, 1000);
+                    // Store questions for later
+                    window.backendQuestions = data.questions;
+                    window.conversationId = data.conversation_id;
+                }
+            } catch (error) {
+                console.error("Failed to start conversation:", error);
+            }
+            document.getElementById('send-btn').disabled = false;
+            
+            // Load first question
+            setTimeout(() => {
+                document.getElementById('step-analyze').classList.remove('active');
+                document.getElementById('step-analyze').classList.add('completed');
+                document.getElementById('step-converse').classList.add('active');
+                
+                addSystemMessage("Let's explore your documentary. Tell me about the central conflict or tension that drives your narrative forward.");
+            }, 1000);
+        }
 
         // Messaging
         function addSystemMessage(text) {
@@ -812,7 +886,7 @@
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
-                        conversation_id: window.conversationId,
+                        conversation_id: conversationId,
                         question_number: currentTurn,
                         answer_text: message
                     })
@@ -826,9 +900,9 @@
                 }
                 
                 // Next question
-                if (data.follow_up_question) {
+                if (data.next_question) {
                     setTimeout(() => {
-                        addSystemMessage(data.follow_up_question);
+                        addSystemMessage(data.next_question);
                     }, 500);
                 }
             } catch (error) {
@@ -857,6 +931,48 @@
 
         function updateTurnCounter() {
             document.getElementById('turn-counter').textContent = `Turn ${currentTurn} of 5`;
+        }
+
+        function toggleMetrics() {
+            const toggle = document.getElementById('metricsToggle');
+            const metricsSection = document.getElementById('metricsSection');
+            
+            if (metricsSection.style.display === 'none') {
+                metricsSection.style.display = 'grid';
+                toggle.style.background = 'rgba(0, 255, 229, 0.3)';
+                toggle.querySelector('.toggle-knob').style.left = '26px';
+                toggle.querySelector('.toggle-knob').style.background = 'var(--primary-cyan)';
+            } else {
+                metricsSection.style.display = 'none';
+                toggle.style.background = 'rgba(255, 255, 255, 0.1)';
+                toggle.querySelector('.toggle-knob').style.left = '2px';
+                toggle.querySelector('.toggle-knob').style.background = '#666';
+            }
+        }
+
+        function displayMetrics(metrics) {
+            if (!metrics) return;
+            
+            const metricsHTML = `
+                <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                    <h4 style="color: var(--primary-cyan);">Completeness</h4>
+                    <div style="font-size: 2rem;">${metrics.completeness?.total_score || 0}/100</div>
+                </div>
+                <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                    <h4 style="color: var(--primary-cyan);">Coherence</h4>
+                    <div style="font-size: 2rem;">${metrics.coherence?.score || 0}/100</div>
+                </div>
+                <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                    <h4 style="color: var(--primary-cyan);">Velocity</h4>
+                    <div style="font-size: 2rem;">${metrics.velocity?.score || 0}/100</div>
+                </div>
+                <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                    <h4 style="color: var(--primary-cyan);">Pattern Match</h4>
+                    <div style="font-size: 2rem;">${metrics.pattern_match?.percentage || 0}%</div>
+                </div>
+            `;
+            
+            document.getElementById('metricsSection').innerHTML = metricsHTML;
         }
 
         // Synthesis
@@ -968,6 +1084,117 @@
             }
         });
     </script>
-<script src="/static/sim.js"></script>
+    <script src="/static/sim.js"></script>
+    <script src="/static/sim.js"></script>
 </body>
 </html>
+<style>
+/* UI/UX Improvements - Added Nov 11 */
+
+/* Better conversation area */
+#conversation-area {
+    background: linear-gradient(145deg, #1a1a1a, #0f0f0f);
+    border-radius: 12px;
+    padding: 20px;
+    min-height: 450px;
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+}
+
+/* Message styling */
+.system-message {
+    background: rgba(0, 255, 229, 0.08);
+    border-left: 3px solid var(--primary-cyan);
+    padding: 15px 20px;
+    margin: 15px 0;
+    border-radius: 8px;
+    font-size: 15px;
+    line-height: 1.6;
+    animation: slideIn 0.4s ease;
+}
+
+.user-message {
+    background: rgba(255, 255, 255, 0.03);
+    border-right: 3px solid #666;
+    padding: 15px 20px;
+    margin: 15px 0;
+    border-radius: 8px;
+    text-align: right;
+    animation: slideIn 0.4s ease;
+}
+
+/* Smooth animations */
+@keyframes slideIn {
+    from { 
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Better button states */
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(0, 255, 229, 0.3);
+}
+
+.action-btn:active {
+    transform: translateY(0);
+}
+
+.action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Processing status improvements */
+#processing-status {
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+/* Input field styling */
+#message-input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(0, 255, 229, 0.3);
+    color: white;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+#message-input:focus {
+    outline: none;
+    border-color: var(--primary-cyan);
+    box-shadow: 0 0 10px rgba(0, 255, 229, 0.2);
+}
+
+/* Scrollbar styling */
+#conversation-area::-webkit-scrollbar {
+    width: 8px;
+}
+
+#conversation-area::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+}
+
+#conversation-area::-webkit-scrollbar-thumb {
+    background: var(--primary-cyan);
+    border-radius: 4px;
+}
+
+/* Turn counter badge */
+.turn-counter {
+    display: inline-block;
+    background: var(--primary-cyan);
+    color: #000;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 12px;
+    margin-bottom: 10px;
+}
+</style>

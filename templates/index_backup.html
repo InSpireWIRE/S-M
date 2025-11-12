@@ -619,7 +619,7 @@
                 </div>
 
                 <button class="send-btn" id="start-btn" style="width: 100%; margin-top: 2rem; display: none;" 
-                        onclick="startConversation()">Start Conversation</button>
+                        onclick="startConversation()">Start Analysis</button>
             </div>
 
             <div class="conversation-section">
@@ -745,8 +745,9 @@
             const file = event.target.files[0];
             if (file) {
                 document.getElementById('uploaded-file').classList.add('show');
-                document.getElementById("file-name").textContent = "Uploading... Please wait";
-                document.getElementById("file-size").textContent = "";
+                document.getElementById('file-name').textContent = file.name;
+                document.getElementById('file-size').textContent = `${(file.size / 1024).toFixed(2)} KB`;
+                document.getElementById('start-btn').style.display = 'block';
                 uploadFile(file);
             }
         }
@@ -762,10 +763,6 @@
                 });
                 const data = await response.json();
                 conversationId = data.conversation_id;
-                window.uploadedDeckId = data.deck_id;
-                document.getElementById("start-btn").style.display = "block";
-                document.getElementById("file-name").textContent = file.name;
-                document.getElementById("file-size").textContent = (file.size / 1024).toFixed(2) + " KB";
             } catch (error) {
                 console.error('Upload failed:', error);
                 // For demo, generate a fake ID
@@ -774,6 +771,30 @@
         }
 
         // Start Conversation
+        async function startConversation() {
+            // Update progress
+            document.getElementById('step-upload').classList.remove('active');
+            document.getElementById('step-upload').classList.add('completed');
+            document.getElementById('step-analyze').classList.add('active');
+            
+            // Show turn counter
+            currentTurn = 1;
+            document.getElementById('turn-counter').style.display = 'block';
+            updateTurnCounter();
+            
+            // Enable input
+            document.getElementById('message-input').disabled = false;
+            document.getElementById('send-btn').disabled = false;
+            
+            // Load first question
+            setTimeout(() => {
+                document.getElementById('step-analyze').classList.remove('active');
+                document.getElementById('step-analyze').classList.add('completed');
+                document.getElementById('step-converse').classList.add('active');
+                
+                addSystemMessage("Let's explore your documentary. Tell me about the central conflict or tension that drives your narrative forward.");
+            }, 1000);
+        }
 
         // Messaging
         function addSystemMessage(text) {
@@ -812,7 +833,7 @@
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
-                        conversation_id: window.conversationId,
+                        conversation_id: conversationId,
                         question_number: currentTurn,
                         answer_text: message
                     })
@@ -826,9 +847,9 @@
                 }
                 
                 // Next question
-                if (data.follow_up_question) {
+                if (data.next_question) {
                     setTimeout(() => {
-                        addSystemMessage(data.follow_up_question);
+                        addSystemMessage(data.next_question);
                     }, 500);
                 }
             } catch (error) {
