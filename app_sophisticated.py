@@ -14,8 +14,8 @@ import pdfplumber
 app = Flask(__name__, template_folder="templates")
 CORS(app, resources={r"/api/*": {"origins": "*", "methods": ["GET", "POST", "OPTIONS"]}})
 
-# Initialize Supabase
-url = "https://izhvyvicvbbuiconxitm.supabase.co"
+url = os.environ.get("SUPABASE_URL", "https://cfvjgyysjxgjmnwxzgrk.supabase.co")
+key = os.environ.get("SUPABASE_KEY")
 key = "sb_publishable_0K-bNGkZJiBsSMS__3AG8w_j5n-UeaX"
 supabase: Client = create_client(url, key)
 
