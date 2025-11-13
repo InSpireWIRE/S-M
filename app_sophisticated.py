@@ -15,7 +15,6 @@ app = Flask(__name__, template_folder="templates", static_folder="static")
 CORS(app, resources={r"/api/*": {"origins": "*", "methods": ["GET", "POST", "OPTIONS"]}})
 
 url = os.environ.get("SUPABASE_URL", "https://izhvyvicvbbuiconxitm.supabase.co")
-key = os.environ.get("SUPABASE_KEY")
 key = "sb_publishable_0K-bNGkZJiBsSMS__3AG8w_j5n-UeaX"
 supabase: Client = create_client(url, key)
 
