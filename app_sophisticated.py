@@ -11,7 +11,7 @@ from flask_cors import CORS
 from supabase import create_client, Client
 import pdfplumber
 
-app = Flask(__name__, template_folder="templates")
+app = Flask(__name__, template_folder="templates", static_folder="static")
 CORS(app, resources={r"/api/*": {"origins": "*", "methods": ["GET", "POST", "OPTIONS"]}})
 
 url = os.environ.get("SUPABASE_URL", "https://cfvjgyysjxgjmnwxzgrk.supabase.co")
